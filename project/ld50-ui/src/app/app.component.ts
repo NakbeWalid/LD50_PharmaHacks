@@ -1,35 +1,23 @@
-import { DecimalPipe } from '@angular/common';
+import { DecimalPipe, KeyValuePipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Component, inject, OnInit, signal } from '@angular/core';
-
-type SplitMetrics = {
-  n: number;
-  mae: number;
-  rmse: number;
-  r2: number;
-};
-
-type MetricsResponse = {
-  description?: string;
-  split_rule?: string;
-  train: SplitMetrics;
-  valid: SplitMetrics;
-  test: SplitMetrics;
-};
+import { BenchmarkPanelComponent } from './benchmark-panel.component';
+import { ChartPanelComponent } from './chart-panel.component';
+import { NB } from './notebook-copy';
+import type { Report } from './report.types';
 
 @Component({
   selector: 'app-root',
-  imports: [DecimalPipe],
+  imports: [DecimalPipe, KeyValuePipe, BenchmarkPanelComponent, ChartPanelComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
 })
 export class AppComponent implements OnInit {
   private readonly http = inject(HttpClient);
 
-  /**
-   * En dev (`ng serve`), les appels passent par le proxy Angular : `/api` → backend
-   * (voir `proxy.conf.json`, champ `target` = URL uvicorn).
-   */
+  readonly nb = NB;
+
+  /** Dev: `/api` is proxied to uvicorn (see `proxy.conf.json`). */
   readonly apiBase = '/api';
 
   readonly rows = signal<
@@ -40,20 +28,20 @@ export class AppComponent implements OnInit {
     { label: 'Test', key: 'test' },
   ]);
 
-  metrics = signal<MetricsResponse | null>(null);
+  report = signal<Report | null>(null);
   error = signal<string | null>(null);
   loading = signal(true);
 
   ngOnInit(): void {
-    this.loadMetrics();
+    this.loadReport();
   }
 
-  loadMetrics(): void {
+  loadReport(): void {
     this.error.set(null);
     this.loading.set(true);
-    this.http.get<MetricsResponse>(`${this.apiBase}/metrics`).subscribe({
-      next: (m) => {
-        this.metrics.set(m);
+    this.http.get<Report>(`${this.apiBase}/report`).subscribe({
+      next: (r) => {
+        this.report.set(r);
         this.loading.set(false);
       },
       error: (e) => {
@@ -61,7 +49,7 @@ export class AppComponent implements OnInit {
         const msg =
           e?.error?.detail ??
           e?.message ??
-          'Erreur réseau — lance uvicorn, vérifie proxy.conf.json (target = même port), exécute train_and_save.py (voir LOCAL_WEB_LD50.md).';
+          'Network error — start uvicorn, check proxy target, run train_and_save.py (see LOCAL_WEB_LD50.md).';
         this.error.set(typeof msg === 'string' ? msg : JSON.stringify(msg));
       },
     });

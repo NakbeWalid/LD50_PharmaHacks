@@ -1,10 +1,12 @@
-# Tester le modèle LD50 en local (Angular + API Python)
+# LD50 local web report (Angular + Python)
 
-L’interface affiche uniquement les **performances** (train / validation / test), comme les métriques du notebook — **pas de prédiction** sur de nouvelles molécules.
+The UI is **English** and shows the same story as `ld50_starter.ipynb`: dataset intro, roadmap, splits, model description, **metrics**, and **figures** (target distribution, validation/test scatter plots, SHAP global and local waterfall for validation row 42).
 
-## 1. Entraîner et exporter métriques + modèle (une fois)
+There is **no SMILES prediction** for arbitrary new molecules — only **reported performance and plots** from the training script.
 
-Même pipeline que le notebook : split TDC 70/10/20, Morgan 1024 (r=2) + 5 descripteurs + MACCS (167), `StandardScaler` sur les 5 descripteurs, XGBoost (hyperparamètres alignés sur `ld50_starter.ipynb`).
+## 1. Train once (generates `report.json`)
+
+Same pipeline as the notebook: TDC-style 70/10/20 split, Morgan (r=2, 1024) + scaled physicochemical descriptors + MACCS (167), XGBoost.
 
 ```powershell
 cd c:\Users\HP\LD50_PharmaHacks\project\ld50-api
@@ -12,37 +14,35 @@ py -3.13 -m pip install -r requirements.txt
 py -3.13 scripts\train_and_save.py
 ```
 
-Cela crée :
+Creates:
 
-- `ld50-api/artifacts/model_bundle.joblib` (non versionné par défaut)
-- `ld50-api/artifacts/metrics.json` — MAE, RMSE (√MSE), R² pour train, valid, test
+- `ld50-api/artifacts/model_bundle.joblib` (gitignored by default)
+- `ld50-api/artifacts/report.json` — metrics + data for all charts (including SHAP)
 
-## 2. Lancer l’API (FastAPI)
+## 2. API (FastAPI)
 
-Choisis un port libre (**8080**, **8765**, etc.) : sous Windows, le **8000** peut déclencher `WinError 10013`. Le fichier **`ld50-ui/proxy.conf.json`** pointe par défaut vers **8765** ; si tu lances uvicorn sur un autre port, mets le même dans `target`.
+Pick a free port (**8765** is the default in `ld50-ui/proxy.conf.json`). Port **8000** may hit `WinError 10013` on some Windows setups.
 
 ```powershell
 cd c:\Users\HP\LD50_PharmaHacks\project\ld50-api
 py -3.13 -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8765
 ```
 
-- Ex. santé : http://127.0.0.1:8765/health  
-- Ex. métriques : http://127.0.0.1:8765/metrics  
-- Ex. docs : http://127.0.0.1:8765/docs  
+- Health: http://127.0.0.1:8765/health  
+- Report JSON: http://127.0.0.1:8765/report  
 
-En dev, l’UI utilise un **proxy Angular** (`ld50-ui/proxy.conf.json`) : les requêtes vont vers `/api/...` et sont renvoyées vers uvicorn. **Modifie `target` dans ce fichier** si ton API n’est pas sur `http://127.0.0.1:8765`. Puis **redémarre** `npm start` après toute modification du proxy.
+If you change the API port, edit **`ld50-ui/proxy.conf.json`** (`target`) and **restart** `npm start`.
 
-## 3. Lancer l’interface Angular
-
-Autre terminal :
+## 3. Angular UI
 
 ```powershell
 cd c:\Users\HP\LD50_PharmaHacks\project\ld50-ui
+npm install
 npm start
 ```
 
-Ouvre http://localhost:4200 — l’app appelle `GET /api/metrics`, relayé par le proxy vers ton uvicorn (évite le décalage de port et le « 0 Unknown Error » si le front pointait vers le mauvais port).
+Open http://localhost:4200 — the app requests **`GET /api/report`** (proxied to uvicorn).
 
-## Après un nouvel entraînement dans le notebook
+## After retraining in the notebook
 
-Ré-exécute `train_and_save.py` pour régénérer `metrics.json` et le bundle, ou adapte le notebook pour exporter les mêmes artefacts (mêmes colonnes et scaler sur `MolWt`, `LogP`, `HBD`, `HBA`, `TPSA`).
+Re-run `train_and_save.py` so `report.json` matches your latest model and plots.

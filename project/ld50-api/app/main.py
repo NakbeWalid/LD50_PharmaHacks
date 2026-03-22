@@ -7,9 +7,22 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 ARTIFACTS_DIR = Path(__file__).resolve().parent.parent / "artifacts"
-METRICS_PATH = ARTIFACTS_DIR / "metrics.json"
+REPORT_PATH = ARTIFACTS_DIR / "report.json"
 
-app = FastAPI(title="LD50 — métriques (local)", version="2.0.0")
+
+def _load_report() -> dict:
+    if not REPORT_PATH.is_file():
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                f"Missing file: {REPORT_PATH}. "
+                "Run: py -3.13 scripts/train_and_save.py from ld50-api/"
+            ),
+        )
+    return json.loads(REPORT_PATH.read_text(encoding="utf-8"))
+
+
+app = FastAPI(title="LD50 report API (local)", version="3.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -23,26 +36,13 @@ app.add_middleware(
 )
 
 
-@app.on_event("startup")
-def startup() -> None:
-    pass
-
-
 @app.get("/health")
 def health():
-    ok = METRICS_PATH.is_file()
-    return {"status": "ok" if ok else "no_metrics", "metrics": str(METRICS_PATH)}
+    ok = REPORT_PATH.is_file()
+    return {"status": "ok" if ok else "no_report", "report": str(REPORT_PATH)}
 
 
-@app.get("/metrics")
-def metrics():
-    """Métriques train / valid / test générées par scripts/train_and_save.py (logique notebook)."""
-    if not METRICS_PATH.is_file():
-        raise HTTPException(
-            status_code=503,
-            detail=(
-                f"Fichier manquant: {METRICS_PATH}. "
-                "Exécute: py -3.13 scripts/train_and_save.py depuis ld50-api/"
-            ),
-        )
-    return json.loads(METRICS_PATH.read_text(encoding="utf-8"))
+@app.get("/report")
+def report():
+    """JSON from scripts/train_and_save.py (metrics + plot data)."""
+    return _load_report()

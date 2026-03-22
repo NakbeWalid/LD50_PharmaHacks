@@ -1,47 +1,156 @@
-<main class="wrap">
-  <h1>LD50 — performances du modèle</h1>
-  <p class="sub">
-    Métriques train / validation / test (même pipeline que le notebook).     En dev, requêtes via proxy <code>/api</code> → voir
-    <code>proxy.conf.json</code>
-  </p>
+<div class="page">
+  <header class="hero">
+    <div class="hero-inner">
+      <p class="badge">PharmaHacks 2026</p>
+      <h1>{{ nb.title }}</h1>
+      <p class="hero-sub">{{ nb.subtitle }}</p>
+      <p class="lead">{{ nb.introLead }}</p>
+    </div>
+  </header>
 
-  <button type="button" class="btn btn-secondary" (click)="loadMetrics()" [disabled]="loading()">
-    {{ loading() ? 'Chargement…' : 'Rafraîchir' }}
-  </button>
+  <main class="content">
+    <section class="card prose">
+      <h2>Introduction</h2>
+      <p>{{ nb.introBody }}</p>
+    </section>
 
-  @if (error(); as err) {
-    <p class="err">{{ err }}</p>
-  }
+    <section class="card prose">
+      <h2>{{ nb.datasetTitle }}</h2>
+      <p class="preserve-lines">{{ nb.datasetBody }}</p>
+    </section>
 
-  @if (metrics(); as m) {
-    @if (m.description) {
-      <p class="meta">{{ m.description }}</p>
-    }
-    @if (m.split_rule) {
-      <p class="meta"><strong>Split :</strong> {{ m.split_rule }}</p>
-    }
-
-    <table class="tbl">
-      <thead>
-        <tr>
-          <th>Échantillon</th>
-          <th class="num">n</th>
-          <th class="num">MAE</th>
-          <th class="num">RMSE</th>
-          <th class="num">R²</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (r of rows(); track r.key) {
-          <tr>
-            <td>{{ r.label }}</td>
-            <td class="num">{{ m[r.key].n }}</td>
-            <td class="num">{{ m[r.key].mae | number : '1.4-4' }}</td>
-            <td class="num">{{ m[r.key].rmse | number : '1.4-4' }}</td>
-            <td class="num">{{ m[r.key].r2 | number : '1.4-4' }}</td>
-          </tr>
+    <section class="card">
+      <h2>{{ nb.roadmapTitle }}</h2>
+      <ol class="steps">
+        @for (s of nb.roadmapSteps; track s) {
+          <li>{{ s }}</li>
         }
-      </tbody>
-    </table>
-  }
-</main>
+      </ol>
+    </section>
+
+    <section class="card">
+      <h2>{{ nb.pipelineTitle }}</h2>
+      <ul class="bullets">
+        @for (b of nb.pipelineBullets; track b) {
+          <li>{{ b }}</li>
+        }
+      </ul>
+    </section>
+
+    @if (loading()) {
+      <div class="card status">Loading report…</div>
+    }
+
+    @if (error(); as err) {
+      <div class="card err-box">
+        <strong>Could not load data.</strong>
+        <p>{{ err }}</p>
+        <button type="button" class="btn primary" (click)="loadReport()">Retry</button>
+      </div>
+    }
+
+    @if (report(); as r) {
+      <section class="card">
+        <h2>Data splits & sample</h2>
+        <p class="muted">
+          Train {{ r.dataset.split_sizes.train }} · Validation {{ r.dataset.split_sizes.valid }} · Test
+          {{ r.dataset.split_sizes.test }}
+        </p>
+        <div class="table-wrap">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>Drug_ID</th>
+                <th>Drug (SMILES)</th>
+                <th class="num">Y (log LD50)</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of r.dataset.sample_rows; track row.Drug_ID) {
+                <tr>
+                  <td class="mono">{{ row.Drug_ID }}</td>
+                  <td class="mono smi">{{ row.Drug }}</td>
+                  <td class="num">{{ row.Y | number : '1.3-3' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Model</h2>
+        @if (r.notebook; as nb) {
+          <p class="muted">{{ nb.reference }}</p>
+        }
+        <p><strong>{{ r.model.name }}</strong></p>
+        <ul class="params">
+          @for (kv of r.model.params | keyvalue; track kv.key) {
+            <li>
+              <span class="k">{{ kv.key }}</span>
+              <span class="v">{{ kv.value }}</span>
+            </li>
+          }
+        </ul>
+        <h3 class="h3">Features</h3>
+        <ul class="bullets compact">
+          <li>Morgan fingerprint: radius {{ r.features.morgan.radius }}, {{ r.features.morgan.n_bits }} bits</li>
+          <li>Physicochemical (scaled): {{ r.features.physicochemical.join(', ') }}</li>
+          <li>MACCS keys: {{ r.features.maccs_bits }} bits</li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2>Metrics</h2>
+        @if (r.metrics.description) {
+          <p class="muted">{{ r.metrics.description }}</p>
+        }
+        @if (r.metrics.split_rule) {
+          <p class="muted"><strong>Split:</strong> {{ r.metrics.split_rule }}</p>
+        }
+        <div class="table-wrap">
+          <table class="tbl accent">
+            <thead>
+              <tr>
+                <th>Split</th>
+                <th class="num">n</th>
+                <th class="num">MAE</th>
+                <th class="num">RMSE</th>
+                <th class="num">R²</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of rows(); track row.key) {
+                <tr>
+                  <td>{{ row.label }}</td>
+                  <td class="num">{{ r.metrics[row.key].n }}</td>
+                  <td class="num">{{ r.metrics[row.key].mae | number : '1.4-4' }}</td>
+                  <td class="num">{{ r.metrics[row.key].rmse | number : '1.4-4' }}</td>
+                  <td class="num">{{ r.metrics[row.key].r2 | number : '1.4-4' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      @if (r.benchmark; as bench) {
+        <section class="card">
+          <h2>Model comparison (benchmark)</h2>
+          <app-benchmark-panel [benchmark]="bench" />
+        </section>
+      }
+
+      <section class="card charts-section">
+        <h2>{{ nb.chartsTitle }}</h2>
+        <p class="muted">{{ nb.chartsLead }}</p>
+        <p class="muted chart-tip">Click a figure to bring it to the front. Click outside it or press Esc to close.</p>
+        <app-chart-panel [report]="r" />
+      </section>
+    }
+  </main>
+
+  <footer class="site-footer">
+    <span>LD50 report · local demo · data from TDC LD50_Zhu</span>
+  </footer>
+</div>
