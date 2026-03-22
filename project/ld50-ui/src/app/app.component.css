@@ -1,0 +1,121 @@
+.wrap {
+  max-width: 42rem;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  font-family: system-ui, sans-serif;
+}
+
+h1 {
+  font-size: 1.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.sub {
+  color: #444;
+  font-size: 0.9rem;
+  margin-bottom: 1.25rem;
+}
+
+code {
+  background: #f3f3f3;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+
+.lab {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+.inp {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-family: ui-monospace, monospace;
+  font-size: 0.95rem;
+}
+
+.btn {
+  margin-top: 0.75rem;
+  padding: 0.45rem 1rem;
+  border: none;
+  border-radius: 6px;
+  background: #1a5fb4;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: #64748b;
+}
+
+.meta {
+  margin-top: 1rem;
+  font-size: 0.88rem;
+  color: #444;
+  line-height: 1.4;
+}
+
+.tbl {
+  width: 100%;
+  margin-top: 1rem;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.tbl th,
+.tbl td {
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0.5rem 0.35rem;
+  text-align: left;
+}
+
+.tbl th {
+  font-weight: 600;
+  color: #334155;
+}
+
+.tbl .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.err {
+  margin-top: 1rem;
+  color: #b00020;
+  font-size: 0.9rem;
+}
+
+.out {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.out h2 {
+  font-size: 1.1rem;
+  margin: 0 0 0.5rem;
+}
+
+.val {
+  font-size: 1.25rem;
+  color: #1a5fb4;
+}
+
+.hint {
+  font-size: 0.85rem;
+  color: #555;
+  margin-top: 0.75rem;
+}

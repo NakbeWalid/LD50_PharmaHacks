@@ -1,0 +1,47 @@
+<main class="wrap">
+  <h1>LD50 — performances du modèle</h1>
+  <p class="sub">
+    Métriques train / validation / test (même pipeline que le notebook).     En dev, requêtes via proxy <code>/api</code> → voir
+    <code>proxy.conf.json</code>
+  </p>
+
+  <button type="button" class="btn btn-secondary" (click)="loadMetrics()" [disabled]="loading()">
+    {{ loading() ? 'Chargement…' : 'Rafraîchir' }}
+  </button>
+
+  @if (error(); as err) {
+    <p class="err">{{ err }}</p>
+  }
+
+  @if (metrics(); as m) {
+    @if (m.description) {
+      <p class="meta">{{ m.description }}</p>
+    }
+    @if (m.split_rule) {
+      <p class="meta"><strong>Split :</strong> {{ m.split_rule }}</p>
+    }
+
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>Échantillon</th>
+          <th class="num">n</th>
+          <th class="num">MAE</th>
+          <th class="num">RMSE</th>
+          <th class="num">R²</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (r of rows(); track r.key) {
+          <tr>
+            <td>{{ r.label }}</td>
+            <td class="num">{{ m[r.key].n }}</td>
+            <td class="num">{{ m[r.key].mae | number : '1.4-4' }}</td>
+            <td class="num">{{ m[r.key].rmse | number : '1.4-4' }}</td>
+            <td class="num">{{ m[r.key].r2 | number : '1.4-4' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</main>

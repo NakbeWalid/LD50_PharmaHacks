@@ -1,0 +1,22 @@
+{
+  "description": "M\u00e9triques sklearn comme le notebook (MAE, RMSE=sqrt(MSE), R\u00b2).",
+  "split_rule": "random 70/10/20, seed=42 puis val random_state=1 (create_fold TDC)",
+  "train": {
+    "n": 5170,
+    "mae": 0.1600867557321803,
+    "rmse": 0.22156509639058775,
+    "r2": 0.9466639059474062
+  },
+  "valid": {
+    "n": 738,
+    "mae": 0.40995300924874906,
+    "rmse": 0.5734396740962553,
+    "r2": 0.6563228904185787
+  },
+  "test": {
+    "n": 1477,
+    "mae": 0.39912809649462955,
+    "rmse": 0.5454320329904453,
+    "r2": 0.6670098776139199
+  }
+}
