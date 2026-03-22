@@ -25,11 +25,10 @@ const AXIS = {
   imports: [DecimalPipe],
   template: `
     <div class="bench-wrap">
-      <h3>Model benchmark (CELL 7.5 — validation set)</h3>
-      <p class="hint">{{ benchmark.description }}</p>
+      <p class="bench-lead">{{ benchmark.description }}</p>
       <p class="hint svr">{{ benchmark.svr_note }}</p>
-      <p class="hint">
-        Presentation target from the notebook: R² ≥ {{ benchmark.r2_threshold }} (dashed line in the original seaborn plot).
+      <p class="hint threshold">
+        Reference line: R² = {{ benchmark.r2_threshold }} (models to the right are above this target).
       </p>
 
       <div class="table-wrap">
@@ -38,9 +37,9 @@ const AXIS = {
             <tr>
               <th>Rank</th>
               <th>Model</th>
-              <th class="num">R² (valid)</th>
-              <th class="num">MAE (valid)</th>
-              <th class="num">Time (s)</th>
+              <th class="num">R² (validation)</th>
+              <th class="num">MAE (validation)</th>
+              <th class="num">Train time (s)</th>
             </tr>
           </thead>
           <tbody>
@@ -62,7 +61,7 @@ const AXIS = {
         </table>
       </div>
 
-      <p class="chart-title">R² on validation (higher is better)</p>
+      <p class="chart-title">Validation R² by model (higher is better)</p>
       <div class="canvas-wrap">
         <canvas #bar></canvas>
       </div>
@@ -73,20 +72,24 @@ const AXIS = {
       .bench-wrap {
         margin-top: 0.5rem;
       }
-      .bench-wrap h3 {
-        margin: 0 0 0.5rem;
-        font-size: 1rem;
-        font-weight: 650;
+      .bench-lead {
+        margin: 0 0 0.75rem;
+        font-size: 0.88rem;
+        color: #cbd5e1;
+        line-height: 1.5;
       }
       .hint {
         margin: 0 0 0.5rem;
         font-size: 0.82rem;
         color: var(--muted);
-        line-height: 1.4;
+        line-height: 1.45;
       }
       .hint.svr {
-        font-size: 0.78rem;
+        font-size: 0.8rem;
         opacity: 0.95;
+      }
+      .hint.threshold {
+        margin-bottom: 0.85rem;
       }
       .chart-title {
         margin: 1rem 0 0.35rem;

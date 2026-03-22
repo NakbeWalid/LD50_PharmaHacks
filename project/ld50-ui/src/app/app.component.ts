@@ -1,14 +1,15 @@
-import { DecimalPipe, KeyValuePipe } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { BenchmarkPanelComponent } from './benchmark-panel.component';
 import { ChartPanelComponent } from './chart-panel.component';
 import { NB } from './notebook-copy';
+import { PARAM_HINTS, PARAM_ORDER } from './model-param-hints';
 import type { Report } from './report.types';
 
 @Component({
   selector: 'app-root',
-  imports: [DecimalPipe, KeyValuePipe, BenchmarkPanelComponent, ChartPanelComponent],
+  imports: [DecimalPipe, BenchmarkPanelComponent, ChartPanelComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
 })
@@ -17,7 +18,6 @@ export class AppComponent implements OnInit {
 
   readonly nb = NB;
 
-  /** Dev: `/api` is proxied to uvicorn (see `proxy.conf.json`). */
   readonly apiBase = '/api';
 
   readonly rows = signal<
@@ -34,6 +34,35 @@ export class AppComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadReport();
+  }
+
+  paramsWithHints(params: Record<string, string | number>): {
+    key: string;
+    value: string | number;
+    hint: string;
+  }[] {
+    const seen = new Set<string>();
+    const rows: { key: string; value: string | number; hint: string }[] = [];
+    for (const k of PARAM_ORDER) {
+      if (k in params) {
+        rows.push({
+          key: k,
+          value: params[k]!,
+          hint: PARAM_HINTS[k] ?? '',
+        });
+        seen.add(k);
+      }
+    }
+    for (const k of Object.keys(params).sort()) {
+      if (!seen.has(k)) {
+        rows.push({
+          key: k,
+          value: params[k]!,
+          hint: PARAM_HINTS[k] ?? '',
+        });
+      }
+    }
+    return rows;
   }
 
   loadReport(): void {

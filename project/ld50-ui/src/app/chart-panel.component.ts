@@ -15,7 +15,6 @@ import type { Report } from './report.types';
 
 Chart.register(...registerables);
 
-/** White ticks / titles; subtle grid for dark UI */
 const AXIS = {
   ticks: { color: '#ffffff' },
   grid: { color: 'rgba(255, 255, 255, 0.14)' },
@@ -56,7 +55,7 @@ const LEGEND_WHITE = {
         >
           <h3>XGBoost Model Performance: Predictions vs Ground Truth (Validation)</h3>
           <p class="chart-hint">
-            CELL 7 — points near the gold dashed line (ideal y = x) are better
+            Points near the gold dashed line (ideal y = x) are better.
           </p>
           <div class="canvas-wrap">
             <canvas #scatterValid></canvas>
@@ -84,7 +83,7 @@ const LEGEND_WHITE = {
           >
           <h3>Prediction Explanation for: {{ sh.waterfall.molecule_id }}</h3>
           <p class="chart-hint">
-            CELL 9 — validation index {{ sh.waterfall.molecule_index }} · predicted
+            Validation index {{ sh.waterfall.molecule_index }} · predicted
             {{ sh.waterfall.predicted_log_ld50 | number : '1.3-3' }} · true
             {{ sh.waterfall.actual_log_ld50 | number : '1.3-3' }}
           </p>
@@ -102,7 +101,6 @@ const LEGEND_WHITE = {
         position: fixed;
         inset: 0;
         z-index: 900;
-        /* Transparent: only closes on outside click; no darkening. */
         background: transparent;
       }
       .chart-grid {
@@ -338,7 +336,6 @@ export class ChartPanelComponent implements AfterViewInit, OnDestroy {
       },
     };
 
-    /* Mixed scatter + line dataset; Chart.js typings are strict on dataset types. */
     this.charts.push(
       new Chart(canvas, {
         type: 'scatter',

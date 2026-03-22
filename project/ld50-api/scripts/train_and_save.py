@@ -1,9 +1,4 @@
-"""
-Aligned with ld50_starter.ipynb (CELL 6 merge/scale, CELL 7 XGBoost, CELL 8–9 SHAP, CELL 10 test).
-Saves model bundle + report.json for the web UI.
-
-Run: py -3.13 project/ld50-api/scripts/train_and_save.py
-"""
+"""Train XGBoost, SHAP, benchmark; write model_bundle.joblib + report.json for the API/UI."""
 
 from __future__ import annotations
 
@@ -38,7 +33,7 @@ ARTIFACTS_DIR = API_ROOT / "artifacts"
 BUNDLE_PATH = ARTIFACTS_DIR / "model_bundle.joblib"
 REPORT_PATH = ARTIFACTS_DIR / "report.json"
 
-MOLECULE_INDEX_WATERFALL = 42  # CELL 9: Case Study — validation row index
+MOLECULE_INDEX_WATERFALL = 42  # validation row for waterfall SHAP
 
 
 def tdc_random_split(df: pd.DataFrame, fold_seed: int = 42, frac: tuple[float, float, float] = (0.7, 0.1, 0.2)):
@@ -55,7 +50,6 @@ def tdc_random_split(df: pd.DataFrame, fold_seed: int = 42, frac: tuple[float, f
 
 
 def build_X(smiles_series: pd.Series) -> pd.DataFrame:
-    # CELL 3: Morgan matrices; CELL 5: advanced descriptors — merged like CELL 6.
     rows_m = [smiles_to_morgan(s) for s in smiles_series]
     rows_a = [get_advanced_descriptors(s) for s in smiles_series]
     morgan_df = pd.DataFrame(rows_m, columns=list(range(MORGAN_NBITS)))
@@ -141,10 +135,6 @@ def run_benchmark_cell_7_5(
     y_pred_xgb_valid: np.ndarray,
     xgb_fit_seconds: float,
 ) -> dict:
-    """
-    CELL 7.5: compare Random Forest, SVR, and XGBoost on the same validation set.
-    sklearn needs string column names (as in the notebook).
-    """
     Xt = X_train.copy()
     Xv = X_valid.copy()
     Xt.columns = Xt.columns.astype(str)
@@ -152,7 +142,6 @@ def run_benchmark_cell_7_5(
 
     rows: list[dict] = []
 
-    # Random Forest — full training set (same as notebook intent).
     rf = RandomForestRegressor(n_estimators=200, max_depth=10, random_state=42, n_jobs=-1)
     t0 = time.perf_counter()
     rf.fit(Xt, y_train)
@@ -167,8 +156,7 @@ def run_benchmark_cell_7_5(
         }
     )
 
-    # SVR RBF — full-data fit is often intractable (O(n²) kernel); notebook uses full X_train.
-    # We train on a fixed random subset so the pipeline finishes in reasonable time; validation predictions use full X_valid.
+    # RBF SVR on full ~5k rows is slow; subsample train for a fair-ish runtime.
     svr_n_train = min(3000, len(Xt))
     rng = np.random.RandomState(42)
     svr_idx = rng.choice(len(Xt), size=svr_n_train, replace=False)
@@ -187,7 +175,6 @@ def run_benchmark_cell_7_5(
         }
     )
 
-    # XGBoost — already trained; report CELL 7 fit time and validation metrics (no refit).
     rows.append(
         {
             "model": "XGBoost",
@@ -201,11 +188,16 @@ def run_benchmark_cell_7_5(
     rank = {m: i + 1 for i, m in enumerate(r["model"] for r in rows)}
 
     return {
-        "description": "Validation-set comparison (same features as CELL 6–7). R² / MAE on log(LD50).",
+        "description": (
+            "Models are ranked on the validation split only, using the same engineered features as the final "
+            "XGBoost pipeline. Reported metrics are R² and MAE on log(LD50). "
+            "Use validation to compare algorithms and tune choices; "
+            "the test split in Metrics is reserved for a single unbiased estimate after the workflow is fixed."
+        ),
         "r2_threshold": 0.6,
         "svr_note": (
-            f"SVR (RBF) was trained on {svr_n_train} random train molecules (seed=42); "
-            "full RBF SVR on ~5k×1200 features is often impractically slow."
+            f"SVR (RBF) was trained on {svr_n_train} randomly sampled training molecules (seed 42). "
+            "A full RBF fit on all training rows at this feature dimension (~5k × 1200) is often impractical."
         ),
         "leaderboard": rows,
         "rank_by_model": rank,
@@ -231,7 +223,6 @@ def main() -> None:
     y_valid = valid_df["Y"].to_numpy(dtype=np.float64)
     y_test = test_df["Y"].to_numpy(dtype=np.float64)
 
-    # CELL 6: fit mean/std ONLY on train; transform valid/test without refitting.
     scaler = StandardScaler()
     X_train = X_train.copy()
     X_valid = X_valid.copy()
@@ -242,7 +233,6 @@ def main() -> None:
 
     feat_labels = column_labels(list(X_train.columns))
 
-    # CELL 7: XGBoost — aggressive hyperparameters to fight chemical noise (notebook).
     model = xgb.XGBRegressor(
         n_estimators=1500,
         learning_rate=0.03,
@@ -255,7 +245,7 @@ def main() -> None:
         n_jobs=-1,
         tree_method="hist",
     )
-    print("Training (CELL 7: eval_set train+valid, early_stopping if supported)...")
+    print("Training XGBoost...")
     fit_kw: dict = {
         "eval_set": [(X_train, y_train), (X_valid, y_valid)],
         "verbose": 100,
@@ -274,14 +264,19 @@ def main() -> None:
     y_pred_test = model.predict(X_test)
 
     metrics_payload = {
-        "description": "r2_score, mean_absolute_error, RMSE = sqrt(MSE) — same as notebook prints.",
-        "split_rule": "Random 70/10/20, seed=42 then val random_state=1 (TDC create_fold).",
+        "description": (
+            "Per-split MAE, RMSE, and R² on log(LD50). "
+            "MAE and RMSE are in log-units; R² is the coefficient of determination."
+        ),
+        "split_rule": (
+            "70% train / 10% validation / 20% test (TDC random split, seed 42). "
+            "Validation fold uses random_state=1 (create_fold)."
+        ),
         "train": eval_split(y_train, y_pred_train),
         "valid": eval_split(y_valid, y_pred_valid),
         "test": eval_split(y_test, y_pred_test),
     }
 
-    # Plots match the notebook: validation scatter (CELL 7), SHAP (CELL 8–9). No extra histogram/test scatter.
     plots: dict = {
         "scatter_validation": {
             "y_true": y_valid.tolist(),
@@ -289,7 +284,7 @@ def main() -> None:
         },
     }
 
-    print("Benchmark (CELL 7.5: Random Forest vs SVR vs XGBoost)...")
+    print("Benchmarking RF / SVR / XGBoost...")
     benchmark = run_benchmark_cell_7_5(
         X_train,
         X_valid,
@@ -308,7 +303,7 @@ def main() -> None:
         train_df[["Drug_ID", "Drug", "Y"]].head(5).to_dict(orient="records")
     )
 
-    print("Computing SHAP (CELL 8-9: TreeExplainer + validation set)...")
+    print("Computing SHAP...")
     try:
         plots["shap"] = compute_shap_plots(
             model, X_valid, valid_df, y_valid, y_pred_valid, feat_labels
@@ -343,7 +338,7 @@ def main() -> None:
             },
         },
         "notebook": {
-            "reference": "ld50_starter.ipynb — CELL 3 Morgan, CELL 5 descriptors, CELL 6 scale, CELL 7–10 train/SHAP/test, CELL 7.5 benchmark",
+            "reference": "Pipeline: Morgan fingerprint, physicochemical descriptors + MACCS, scaled continuous features, XGBoost, SHAP, benchmark.",
         },
         "benchmark": benchmark,
         "features": {

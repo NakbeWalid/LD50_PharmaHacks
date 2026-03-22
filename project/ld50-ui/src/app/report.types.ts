@@ -29,7 +29,6 @@ export type BenchmarkBlock = {
   rank_by_model: Record<string, number>;
 };
 
-/** Matches ld50_starter.ipynb plots: CELL 7 validation scatter, CELL 8–9 SHAP, CELL 7.5 benchmark. */
 export type Report = {
   metrics: MetricsBlock;
   plots: {

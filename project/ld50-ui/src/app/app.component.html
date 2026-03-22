@@ -20,15 +20,6 @@
     </section>
 
     <section class="card">
-      <h2>{{ nb.roadmapTitle }}</h2>
-      <ol class="steps">
-        @for (s of nb.roadmapSteps; track s) {
-          <li>{{ s }}</li>
-        }
-      </ol>
-    </section>
-
-    <section class="card">
       <h2>{{ nb.pipelineTitle }}</h2>
       <ul class="bullets">
         @for (b of nb.pipelineBullets; track b) {
@@ -80,15 +71,17 @@
 
       <section class="card">
         <h2>Model</h2>
-        @if (r.notebook; as nb) {
-          <p class="muted">{{ nb.reference }}</p>
-        }
         <p><strong>{{ r.model.name }}</strong></p>
         <ul class="params">
-          @for (kv of r.model.params | keyvalue; track kv.key) {
+          @for (row of paramsWithHints(r.model.params); track row.key) {
             <li>
-              <span class="k">{{ kv.key }}</span>
-              <span class="v">{{ kv.value }}</span>
+              <div class="param-main">
+                <span class="k">{{ row.key }}</span>
+                <span class="v">{{ row.value }}</span>
+              </div>
+              @if (row.hint) {
+                <p class="param-hint">{{ row.hint }}</p>
+              }
             </li>
           }
         </ul>
@@ -102,11 +95,11 @@
 
       <section class="card">
         <h2>Metrics</h2>
-        @if (r.metrics.description) {
-          <p class="muted">{{ r.metrics.description }}</p>
-        }
+        <p class="muted metrics-lead">{{ nb.metricsLead }}</p>
         @if (r.metrics.split_rule) {
-          <p class="muted"><strong>Split:</strong> {{ r.metrics.split_rule }}</p>
+          <p class="muted split-line">
+            <strong>Data split.</strong> {{ r.metrics.split_rule }}
+          </p>
         }
         <div class="table-wrap">
           <table class="tbl accent">
@@ -136,7 +129,7 @@
 
       @if (r.benchmark; as bench) {
         <section class="card">
-          <h2>Model comparison (benchmark)</h2>
+          <h2>Model comparison</h2>
           <app-benchmark-panel [benchmark]="bench" />
         </section>
       }

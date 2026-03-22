@@ -93,21 +93,6 @@
   white-space: pre-line;
 }
 
-.steps {
-  margin: 0;
-  padding-left: 1.25rem;
-  color: #cbd5e1;
-  font-size: 0.95rem;
-}
-
-.steps li {
-  margin-bottom: 0.5rem;
-}
-
-.steps li:last-child {
-  margin-bottom: 0;
-}
-
 .bullets {
   margin: 0;
   padding-left: 1.25rem;
@@ -124,6 +109,15 @@
   font-size: 0.88rem;
   color: var(--muted);
   line-height: 1.45;
+}
+
+.metrics-lead {
+  margin-bottom: 0.65rem;
+}
+
+.split-line {
+  margin-top: 0;
+  margin-bottom: 1rem;
 }
 
 .status {
@@ -200,12 +194,19 @@
 
 .params li {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  padding: 0.4rem 0.6rem;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.45rem 0.65rem;
   background: rgba(15, 23, 42, 0.6);
   border-radius: 8px;
   border: 1px solid var(--border);
+}
+
+.param-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
 }
 
 .params .k {
@@ -218,6 +219,15 @@
   color: #e2e8f0;
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.82rem;
+}
+
+.param-hint {
+  margin: 0;
+  padding: 0.05rem 0 0;
+  font-size: 0.76rem;
+  line-height: 1.4;
+  color: #64748b;
+  font-weight: 400;
 }
 
 .charts-section {

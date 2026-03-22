@@ -44,5 +44,4 @@ def health():
 
 @app.get("/report")
 def report():
-    """JSON from scripts/train_and_save.py (metrics + plot data)."""
     return _load_report()
